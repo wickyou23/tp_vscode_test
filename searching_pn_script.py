@@ -2,8 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from tp_logger import logger
 
-import logging
 import time
 import datetime as dt
 import constants
@@ -16,16 +16,6 @@ all_part_dict = {}
 csv_title = []
 delay_searching_time = [1, 1.2, 1.4, 1.6, 1.8, 2]
 current_time = int(dt.datetime.now().timestamp() * 1000)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] [%(filename)s:%(funcName)s:%(lineno)d] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-
-# Get the logger
-logger = logging.getLogger()
 
 def searching_pn_automation():
     #Read csv file
