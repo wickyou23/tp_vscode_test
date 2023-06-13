@@ -177,29 +177,33 @@ def search_part_number():
 
                     parent = driver.find_element(By.XPATH, "//li[@class='col-12 px-0 flex align-items-center gap-3']")
                     all_button = parent.find_elements(By.TAG_NAME, "button")
-                    datasheet_button = all_button[0]
-                    if not datasheet_button.is_enabled():
+                    if all_button.__len__() == 0 or all_button == None:
                         found = False
-                        error_reason = "DATASHEET NOT FOUND"
+                        error_reason = "CANNOT FOUND DATASHEET BUTTON"
                     else:
-                        action_chains = ActionChains(driver)
-                        action_chains.key_down(Keys.COMMAND).click(datasheet_button).key_up(Keys.COMMAND).perform()
-
-                        time.sleep(2)
-                        driver.switch_to.window(driver.window_handles[1])
-                        wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
-                        content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
-                        logger.info("[%s] Download PDF content-type: %s", x, content_type)
-                        if content_type != "application/pdf":
+                        datasheet_button = all_button[0]
+                        if not datasheet_button.is_enabled():
                             found = False
                             error_reason = "DATASHEET NOT FOUND"
-
-                        time.sleep(2)
-                        if driver.set_window_position != 0:
-                            driver.close()
-                            driver.switch_to.window(driver.window_handles[0])
                         else:
-                            None
+                            action_chains = ActionChains(driver)
+                            action_chains.key_down(Keys.COMMAND).click(datasheet_button).key_up(Keys.COMMAND).perform()
+
+                            time.sleep(2)
+                            driver.switch_to.window(driver.window_handles[1])
+                            wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
+                            content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
+                            logger.info("[%s] Download PDF content-type: %s", x, content_type)
+                            if content_type != "application/pdf":
+                                found = False
+                                error_reason = "DATASHEET NOT FOUND"
+
+                            time.sleep(2)
+                            if driver.set_window_position != 0:
+                                driver.close()
+                                driver.switch_to.window(driver.window_handles[0])
+                            else:
+                                None
                 except Exception as e:
                     logger.error("[%s] error while loading datasheet %s", x, str(e))
                     found = False
@@ -210,7 +214,6 @@ def search_part_number():
                         driver.switch_to.window(driver.window_handles[0])
                     else:
                         None
-                    
             else:
                 error_reason = error_reason if error_reason.__len__() else "TIMEOUT"
 
