@@ -194,7 +194,7 @@ def search_part_number():
                             wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
                             content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
                             logger.info("[%s][1] Download PDF content-type: %s", x, content_type)
-                            if content_type == "application/xml" or content_type == "text/xml":
+                            if content_type == "application/xml" or content_type == "text/xml" or content_type == "text/html":
                                 found = False
                                 error_reason = "CANNOT DOWNLOAD PDF FILE" 
                             else:
@@ -206,7 +206,7 @@ def search_part_number():
                                     error_reason = "CANNOT DOWNLOAD PDF FILE"
 
                             time.sleep(2)
-                            if driver.set_window_position != 0:
+                            if driver.current_window_handle != driver.window_handles[0]:
                                 driver.close()
                                 driver.switch_to.window(driver.window_handles[0])
                             else:
@@ -219,7 +219,7 @@ def search_part_number():
                     found = False
                     error_reason = "ERROR WHILE LOADING DATASHEET"
                     time.sleep(1)
-                    if driver.set_window_position != 0:
+                    if driver.current_window_handle != driver.window_handles[0]:
                         driver.close()
                         driver.switch_to.window(driver.window_handles[0])
                     else:
