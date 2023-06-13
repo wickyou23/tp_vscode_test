@@ -111,11 +111,12 @@ def search_part_number():
 
     logger.info("##### Search Step #####")
 
+    wait_for_pdf = WebDriverWait(driver, 5)
     error_reason = ""
     if all_part_dict.__len__() == 0:
         logger.error("No number part")
         return
-        
+    
     #find all parts button
     all_part_button = driver.find_element(By.XPATH, "//button[@aria-label='All parts']")
     all_part_button.click()
@@ -191,19 +192,26 @@ def search_part_number():
 
                             time.sleep(2)
                             driver.switch_to.window(driver.window_handles[1])
-                            wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                            wait_for_pdf.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
                             content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
-                            logger.info("[%s][1] Download PDF content-type: %s", x, content_type)
-                            if content_type == "application/xml" or content_type == "text/xml" or content_type == "text/html":
+                            logger.info("[%s] Download PDF content-type: %s", x, content_type)
+                            if content_type != "application/pdf":
                                 found = False
-                                error_reason = "CANNOT DOWNLOAD PDF FILE" 
-                            else:
-                                wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
-                                content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
-                                logger.info("[%s][2] Download PDF content-type: %s", x, content_type)
-                                if content_type != "application/pdf":
-                                    found = False
-                                    error_reason = "CANNOT DOWNLOAD PDF FILE"
+                                error_reason = "CANNOT DOWNLOAD PDF FILE"
+
+                            # wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+                            # content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
+                            # logger.info("[%s][1] Download PDF content-type: %s", x, content_type)
+                            # if content_type == "application/xml" or content_type == "text/xml" or content_type == "text/html":
+                            #     found = False
+                            #     error_reason = "CANNOT DOWNLOAD PDF FILE" 
+                            # else:
+                            #     wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
+                            #     content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
+                            #     logger.info("[%s][2] Download PDF content-type: %s", x, content_type)
+                            #     if content_type != "application/pdf":
+                            #         found = False
+                            #         error_reason = "CANNOT DOWNLOAD PDF FILE"
 
                             time.sleep(2)
                             if driver.current_window_handle != driver.window_handles[0]:
