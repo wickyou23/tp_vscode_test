@@ -18,6 +18,10 @@ delay_searching_time = [1, 1.2, 1.4, 1.6, 1.8, 2]
 current_time = int(dt.datetime.now().timestamp() * 1000)
 
 def searching_pn_automation():
+    #init browser
+    # driver = webdriver.Firefox()
+    # wait = WebDriverWait(driver, 30)
+
     #Read csv file
     read_csv_file()
 
@@ -53,7 +57,24 @@ def login_if_needed():
 
         signin_button = driver.find_element(By.XPATH, "//button[@aria-label='Sign In']")
         signin_button.click()
-        wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='p-inputgroup']")))
+        time.sleep(1)
+
+        login_timeout = 5.0
+        input_group = None
+        while login_timeout > 0:
+            try:
+                input_group = driver.find_element(By.XPATH, "//div[@class='p-inputgroup']")
+            except Exception as e:
+                logger.error("Trying to find input group %s", str(e))
+                None
+
+            login_timeout -= 0.5
+            time.sleep(0.5)
+        
+        #try to redirect to search part url
+        if input_group == None:
+            driver.get(constants.URL_SEARCH_PART_BROWSER)
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='p-inputgroup']")))
     else:
         None
 
@@ -64,18 +85,30 @@ def read_csv_file():
 
     with open(f"./resources/{constants.CSV_FILE_NAME}.csv", "r") as csv_file:
         reader = csv.reader(csv_file)
-        isTitleRow = True
+        is_title_row = True
+        has_found_title = False
         for row in reader:
-            if isTitleRow:
-                csv_title.extend(row)
-                isTitleRow = False
-            else:
-                part_number = row[3]
-                if not all_part_dict.__contains__(part_number):
-                    all_part_key.append(row[3])
-                    all_part_dict[row[3]] = row
+            if not has_found_title:
+                if row[0] == "Item Number" and row[1] == "Quantity" and row[2] == "Part Reference" and row[3] == "AMZ_PN":
+                    has_found_title = True
                 else:
-                    logger.warning("[DUPLICATED] [PART_NUMBER] %s [ORDER] %s", part_number, row[0])
+                    continue
+            else:
+                None
+            
+            if has_found_title:
+                if is_title_row:
+                    csv_title.extend(row)
+                    is_title_row = False
+                else:
+                    part_number = row[3]
+                    if not all_part_dict.__contains__(part_number):
+                        all_part_key.append(row[3])
+                        all_part_dict[row[3]] = row
+                    else:
+                        logger.warning("[DUPLICATED] [PART_NUMBER] %s [ORDER] %s", part_number, row[0])
+            else:
+                None
 
 def search_part_number():
     import random
@@ -86,7 +119,11 @@ def search_part_number():
     if all_part_dict.__len__() == 0:
         logger.error("No number part")
         return
-
+        
+    #find all parts button
+    all_part_button = driver.find_element(By.XPATH, "//button[@aria-label='All parts']")
+    all_part_button.click()
+        
     for x in all_part_key:
         delay_time = delay_searching_time[random.randint(0, delay_searching_time.__len__() - 1)]
         time.sleep(delay_time)
