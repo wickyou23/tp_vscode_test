@@ -29,9 +29,6 @@ def searching_pn_automation():
     driver.get(constants.URL_DEFAULT)
     wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-    from selenium.webdriver.common.action_chains import ActionChains
-    from selenium.webdriver.common.keys import Keys
-
     try:
         login_if_needed()
 
@@ -43,7 +40,6 @@ def searching_pn_automation():
     except Exception as e:
         logger.error(f"Searching done with unknown error: %s", str(e))
         driver.quit()
-    
 
 def login_if_needed():
     logger.info("##### Login Step #####")
@@ -130,6 +126,7 @@ def search_part_number():
 
         logger.info("[%s] Searching [Order] %s [Delay] %.2f [PART_NUMBER] %s", x, all_part_dict[x][0], delay_time, x)
         
+        #Find input element
         timeout_find_input_search = 5
         found_input_search = False
         while timeout_find_input_search > 0:
@@ -146,10 +143,12 @@ def search_part_number():
             except:
                 None
             
-            time_out_find_input_search -= 1
+            timeout_find_input_search -= 1
             time.sleep(1)
 
         if found_input_search:
+
+            #Find search result
             timeout_find_search_result = 10
             found = False
             while timeout_find_search_result > 0:
@@ -175,6 +174,7 @@ def search_part_number():
                     from selenium.webdriver.common.action_chains import ActionChains
                     from selenium.webdriver.common.keys import Keys
 
+                    #Find pdf document
                     parent = driver.find_element(By.XPATH, "//li[@class='col-12 px-0 flex align-items-center gap-3']")
                     all_button = parent.find_elements(By.TAG_NAME, "button")
                     if all_button.__len__() == 0 or all_button == None:
@@ -191,12 +191,19 @@ def search_part_number():
 
                             time.sleep(2)
                             driver.switch_to.window(driver.window_handles[1])
-                            wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
+                            wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
                             content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
-                            logger.info("[%s] Download PDF content-type: %s", x, content_type)
-                            if content_type != "application/pdf":
+                            logger.info("[%s][1] Download PDF content-type: %s", x, content_type)
+                            if content_type == "application/xml" or content_type == "text/xml":
                                 found = False
-                                error_reason = "DATASHEET NOT FOUND"
+                                error_reason = "CANNOT DOWNLOAD PDF FILE" 
+                            else:
+                                wait.until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='outerContainer']/div[@id='mainContainer']")))
+                                content_type = driver.execute_script("return window.navigator.contentType || document.contentType || ''")
+                                logger.info("[%s][2] Download PDF content-type: %s", x, content_type)
+                                if content_type != "application/pdf":
+                                    found = False
+                                    error_reason = "CANNOT DOWNLOAD PDF FILE"
 
                             time.sleep(2)
                             if driver.set_window_position != 0:
@@ -204,6 +211,9 @@ def search_part_number():
                                 driver.switch_to.window(driver.window_handles[0])
                             else:
                                 None
+                    
+                    #Comparing datas
+                        
                 except Exception as e:
                     logger.error("[%s] error while loading datasheet %s", x, str(e))
                     found = False
