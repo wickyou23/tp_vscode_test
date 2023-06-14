@@ -1,54 +1,66 @@
 from typing import Any
 
-import pyodbc
 import constants
+import pymysql
+from tp_logger import logger
+
 
 class DBConnection:
+    _connection = None
+    _cursor = None
 
-    _connection: pyodbc.Connection = None
+    def connect_db(self):
+        self._connection = pymysql.connect(
+            host=constants.DB_HOST,
+            user=constants.DB_USER,
+            password=constants.DB_PASSWORD,
+            port=constants.DB_PORT
+        )
 
-    def configurate_db(self):
-        server = constants.DB_HOST
-        port = constants.DB_PORT
-        user = constants.DB_USER
-        password = constants.DB_PASSWORD
-
-        # conn_str = f"DRIVER={{MySQL ODBC 8.0 Driver}};SERVER={server},{port};UID={user};PWD={password}"
-        conn_str = f"DRIVER={{MySQL ODBC 8.0 Driver}};SERVER=localhost;USERNAME=root;PASSWORD=123456@xX;DATABASE=information_schema;CHARSET=UTF8;"
-        print(conn_str)
         try:
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            print("SELECT * FROM your_table_name")
-            cursor.execute("SELECT * FROM your_table_name")
-            rows = cursor.fetchall()
+            # Create a cursor object
+            self._cursor = self._connection.cursor()
+
+            # Using orcad db from HW
+            self._cursor.execute("USE orcad")
         except Exception as e:
-            print(str(e))
+            logger.error("Connect db error: %s", str(e))
+            if self._connection != None:
+                self._connection.close()
+            else:
+                None
 
-
+            raise e
 
     def close_connection(self):
         self._connection.close()
 
+    def fetch_all_tables(self):
+        query = "SHOW TABLES"
+        try:
+            self._cursor.execute(query)
+            return list(map(lambda item: item[0], self._cursor.fetchall()))
+        except Exception as e:
+            logger.error("FETCH Tables error: %s", str(e))
+            raise e
+    
+    def fetch_all_column_name(self, table):
+        query = f"SHOW COLUMNS FROM {table}"
+        try:
+            self._cursor.execute(query)
+            return list(map(lambda item: item[0], self._cursor.fetchall()))
+        except Exception as e:
+            logger.error("FETCH Tables error: %s", str(e))
+            raise e
+        
+    def fetch_all_data(self, table):
+        query = f"SELECT * FROM {table}"
+        try:
+            self._cursor.execute(query)
+            return list(map(lambda item: list(item), self._cursor.fetchall()))
+        except Exception as e:
+            logger.error("FETCH Tables error: %s", str(e))
+            raise e
+        
     def __init__(self):
-        print("init")
-        driver_name = ''
-        driver_names = [x for x in pyodbc.drivers() if x.endswith(' for SQL Server')]
-        if driver_names:
-            driver_name = driver_names[0]
-            
-        if driver_name:
-            conn_str = 'DRIVER={}; ...'.format(driver_name)
-            # then continue with ...
-            # pyodbc.connect(conn_str)
-            # ... etc.
-
-            print(conn_str)
-        else:
-            print('(No suitable driver found. Cannot connect.)')
-
-    
-
-    
-
-# db_connection_shared = DBConnection()
+        None

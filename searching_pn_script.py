@@ -13,14 +13,14 @@ driver = webdriver.Firefox()
 wait = WebDriverWait(driver, 30)
 all_part_key = []
 all_part_dict = {}
-csv_title = []
+csv_title = None
 delay_searching_time = [1, 1.2, 1.4, 1.6, 1.8, 2]
 current_time = int(dt.datetime.now().timestamp() * 1000)
+table_db_name = None
 
 def searching_pn_automation():
-    #init browser
-    # driver = webdriver.Firefox()
-    # wait = WebDriverWait(driver, 30)
+    #Read from db
+    # read_from_db()
 
     #Read csv file
     read_csv_file()
@@ -78,6 +78,7 @@ def read_csv_file():
     import csv
     
     logger.info("##### Read CSV Step #####")
+    global csv_title
 
     with open(f"./resources/{constants.CSV_FILE_NAME}.csv", "r") as csv_file:
         reader = csv.reader(csv_file)
@@ -94,7 +95,7 @@ def read_csv_file():
             
             if has_found_title:
                 if is_title_row:
-                    csv_title.extend(row)
+                    csv_title = row
                     is_title_row = False
                 else:
                     part_number = row[3]
@@ -105,6 +106,37 @@ def read_csv_file():
                         logger.warning("[DUPLICATED] [PART_NUMBER] %s [ORDER] %s", part_number, row[0])
             else:
                 None
+
+def read_from_db():
+    from db_connection import DBConnection
+    global table_db_name, csv_title
+
+    logger.info("##### Read data from DB #####")
+    
+    db = DBConnection()
+    db.connect_db()
+
+    #Get tables
+    tables = db.fetch_all_tables()
+    table_db_name = tables[0]
+
+    #Get column
+    column_name = db.fetch_all_column_name(table=tables[0])
+    logger.info("column name in %s: %s", tables[0], column_name)
+    csv_title = column_name
+
+    #Get datas
+    datas = db.fetch_all_data(table=tables[0])
+    logger.info("data in %s: %s", tables[0], datas.__len__())
+    for row in datas:
+        part_number = row[0]
+        if not all_part_dict.__contains__(part_number):
+            all_part_key.append(row[0])
+            all_part_dict[row[0]] = row
+        else:
+            logger.warning("[DUPLICATED] [PART_NUMBER] %s [ORDER] %s", part_number, row[0])
+
+    db.close_connection()
 
 def search_part_number():
     import random
@@ -247,8 +279,9 @@ def write_output(row):
     if row.__len__() > 0:
         import csv
         import os
-        
-        folder_path = f"./resources/{constants.CSV_FILE_NAME}_results"
+
+        folder_name = table_db_name if table_db_name != None else constants.CSV_FILE_NAME
+        folder_path = f"./resources/{folder_name}_results"
         output_path = f"{folder_path}/{current_time}_output.csv"
         os.makedirs(folder_path, exist_ok=True)
         if os.path.exists(output_path):
